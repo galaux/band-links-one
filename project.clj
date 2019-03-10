@@ -13,6 +13,11 @@
                                com.google.code.findbugs/jsr305
                                com.google.guava/guava]]
 
+                 [org.clojure/tools.logging "0.4.1"]
+                 [org.slf4j/slf4j-api "1.7.26"]
+                 ;; [org.slf4j/log4j-over-slf4j "1.7.26"]
+                 [ch.qos.logback/logback-classic "1.2.3"]
+
                  [com.datomic/datomic-pro "0.9.5786"
                   :exclusions [org.slf4j/slf4j-nop]]
                  ;; Datomic declares dependency on an old guava
