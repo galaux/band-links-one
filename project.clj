@@ -1,11 +1,24 @@
 (defproject band-links "0.1.0-SNAPSHOT"
+
+  :repositories {"my.datomic.com" {:url "https://my.datomic.com/repo"}}
+
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [org.clojure/clojurescript "1.10.520"
                   :exclusions [com.google.errorprone/error_prone_annotations
-                               com.google.code.findbugs/jsr305]]
+                               com.google.code.findbugs/jsr305
+                               com.google.guava/guava]]
                  [reagent "0.8.1"]
                  [re-frame "0.10.6"
-                  :exclusions [args4j]]]
+                  :exclusions [args4j
+                               com.google.code.findbugs/jsr305
+                               com.google.guava/guava]]
+
+                 [com.datomic/datomic-pro "0.9.5786"
+                  :exclusions [org.slf4j/slf4j-nop]]
+                 ;; Datomic declares dependency on an old guava
+                 ;; so forcing it to a new one
+                 [com.google.guava/guava "23.0"]
+                 ]
 
   :plugins [[lein-cljsbuild "1.1.7"]]
 
@@ -23,7 +36,9 @@
   {:dev
    {:dependencies [[binaryage/devtools "0.9.10"]
                    [figwheel-sidecar "0.5.18"
-                    :exclusions [args4j]]
+                    :exclusions [args4j
+                                 com.google.code.findbugs/jsr305
+                                 com.google.guava/guava]]
                    [cider/piggieback "0.4.0"]]
 
     :plugins      [[lein-figwheel "0.5.16"]]}
