@@ -39,7 +39,8 @@
 
   :profiles
   {:dev
-   {:dependencies [[binaryage/devtools "0.9.10"]
+   {:source-paths ["env/dev"]
+    :dependencies [[binaryage/devtools "0.9.10"]
                    [figwheel-sidecar "0.5.18"
                     :exclusions [args4j
                                  com.google.code.findbugs/jsr305
