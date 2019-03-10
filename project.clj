@@ -1,8 +1,11 @@
 (defproject band-links "0.1.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 [org.clojure/clojurescript "1.10.520"]
+                 [org.clojure/clojurescript "1.10.520"
+                  :exclusions [com.google.errorprone/error_prone_annotations
+                               com.google.code.findbugs/jsr305]]
                  [reagent "0.8.1"]
-                 [re-frame "0.10.6"]]
+                 [re-frame "0.10.6"
+                  :exclusions [args4j]]]
 
   :plugins [[lein-cljsbuild "1.1.7"]]
 
@@ -19,7 +22,8 @@
   :profiles
   {:dev
    {:dependencies [[binaryage/devtools "0.9.10"]
-                   [figwheel-sidecar "0.5.18"]
+                   [figwheel-sidecar "0.5.18"
+                    :exclusions [args4j]]
                    [cider/piggieback "0.4.0"]]
 
     :plugins      [[lein-figwheel "0.5.16"]]}
