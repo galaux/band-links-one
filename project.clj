@@ -7,11 +7,16 @@
                   :exclusions [com.google.errorprone/error_prone_annotations
                                com.google.code.findbugs/jsr305
                                com.google.guava/guava]]
+
                  [reagent "0.8.1"]
                  [re-frame "0.10.6"
                   :exclusions [args4j
                                com.google.code.findbugs/jsr305
                                com.google.guava/guava]]
+
+                 [compojure "1.5.0"]
+                 [yogthos/config "0.8"]
+                 [ring "1.4.0"]
 
                  [org.clojure/tools.logging "0.4.1"]
                  [org.slf4j/slf4j-api "1.7.26"]
@@ -33,7 +38,8 @@
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "target"]
 
-  :figwheel {:css-dirs ["resources/public/css"]}
+  :figwheel {:css-dirs ["resources/public/css"]
+             :ring-handler band-links.handler/dev-handler}
 
   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 
@@ -49,6 +55,12 @@
 
     :plugins      [[lein-figwheel "0.5.16"]]}
    :prod { }
+   :uberjar {:source-paths ["env/prod/clj"]
+             :omit-source  true
+             :main         band-links.server
+             :aot          [band-links.server]
+             :uberjar-name "band-links.jar"
+             :prep-tasks   ["compile" ["cljsbuild" "once" "min"]]}
    }
 
   :cljsbuild
@@ -67,6 +79,7 @@
 
     {:id           "min"
      :source-paths ["src/cljs"]
+     :jar true
      :compiler     {:main            band-links.core
                     :output-to       "resources/public/js/compiled/app.js"
                     :optimizations   :advanced
