@@ -28,10 +28,7 @@
 
 (defn test-fixture
   [f]
-  (let [uri "datomic:mem://band-links-test-db"
-        _ (d/create-database uri)
-        conn (d/connect uri)]
-    (d/transact conn schema)
+  (let [conn (conn-with-schema "datomic:mem://band-links-test")]
     (d/transact conn initial-band-data)
     (binding [*test-conn* conn]
       (f)

@@ -13,10 +13,14 @@
                   :exclusions [args4j
                                com.google.code.findbugs/jsr305
                                com.google.guava/guava]]
+                 [cljs-ajax "0.8.0"]
+                 [day8.re-frame/http-fx "0.1.6"]
 
                  [compojure "1.5.0"]
                  [yogthos/config "0.8"]
                  [ring "1.4.0"]
+                 [ring/ring-defaults "0.3.2"]
+                 [ring/ring-json "0.4.0"]
 
                  [org.clojure/tools.logging "0.4.1"]
                  [org.slf4j/slf4j-api "1.7.26"]

@@ -19,6 +19,12 @@
     :db/cardinality :db.cardinality/many
     :db/doc "An artist's ref to a band"}])
 
+(defn conn-with-schema
+  [uri]
+  (if (d/create-database uri)
+    (d/transact (d/connect uri) schema))
+  (d/connect uri))
+
 (def datomic-rules
   '[[(band-name->eid ?band-name ?eid)
      [?eid :band/name ?band-name]]
