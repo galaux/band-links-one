@@ -15,9 +15,16 @@
 (re-frame/reg-sub
  ::result
  (fn [db]
-   (str (:data db))))
+   (:data db)))
 
 (re-frame/reg-sub
  ::error
  (fn [db]
    (str (:error db))))
+
+
+(re-frame/reg-sub
+ ::circles
+ (fn [db]
+   (:circles db)))
+ 

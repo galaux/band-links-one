@@ -17,26 +17,26 @@
    (assoc db field-id value)))
    
 
-(defn ->loading
-  [db]
-  (-> db
-      (assoc :loading? true)
-      (assoc :data nil)
-      (assoc :error nil)))
+;; (defn ->loading
+;;   [db]
+;;   (-> db
+;;       (assoc :loading? true)
+;;       (assoc :data nil)
+;;       (assoc :error nil)))
 
-(defn ->data
-  [db data]
-  (-> db
-      (assoc :loading? false)
-      (assoc :data data)
-      (assoc :error nil)))
+;; (defn ->data
+;;   [db data]
+;;   (-> db
+;;       (assoc :loading? false)
+;;       (assoc :data data)
+;;       (assoc :error nil)))
 
-(defn ->error
-  [db error]
-  (-> db
-      (assoc :loading? false)
-      (assoc :data nil)
-      (assoc :error error)))
+;; (defn ->error
+;;   [db error]
+;;   (-> db
+;;       (assoc :loading? false)
+;;       (assoc :data nil)
+;;       (assoc :error error)))
 
 (re-frame/reg-event-fx
  ::button-clicked
@@ -48,15 +48,24 @@
                    :format          (ajax/url-request-format)
                    :response-format (ajax/json-response-format {:keywords? true})
                    :on-success      [::process-response]
-                   :on-failure      [::bad-response]}
-      :db (->loading db)})))
+                   :on-failure      [::bad-response]}})))
+      ;; :db (->loading db)
+
 
 (re-frame/reg-event-db
  ::process-response
  (fn [db [_ response]]
-   (->data db (js->clj response))))
+   (assoc db :data (js->clj response))))
+   ;; (->data db (js->clj response))))
 
 (re-frame/reg-event-db
  ::bad-response
  (fn [db [_ response]]
-   (->error db (js->clj response))))
+   (println ">>> ERROR" (js->clj response))))
+   ;; (->error db (js->clj response))))
+
+
+(re-frame/reg-event-db
+ ::update
+ (fn [db [_ idx param val]]
+   (assoc-in db [:circles idx param] val)))

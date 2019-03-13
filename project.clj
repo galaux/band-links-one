@@ -15,6 +15,7 @@
                                com.google.guava/guava]]
                  [cljs-ajax "0.8.0"]
                  [day8.re-frame/http-fx "0.1.6"]
+                 [cljsjs/d3 "5.9.1-0"]
 
                  [compojure "1.5.0"]
                  [yogthos/config "0.8"]
