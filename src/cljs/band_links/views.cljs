@@ -54,11 +54,28 @@
                                   (data (.nodes simul))
                                   enter
                                   (append "g")
-                                  (attr "transform" #(str "translate(" (.-x %) " " (.-y %) ")")))]
+                                  (attr "transform" #(str "translate(" (.-x %) " " (.-y %) ")")))
+                  drag-fn (fn [s]
+                            (.. js/d3
+                                drag
+                                (on "start" (fn [d]
+                                              (.. s
+                                                  (alphaTarget 0.3)
+                                                  restart)
+                                              (set! (.-fx d) (.-x d))
+                                              (set! (.-fy d) (.-y d))))
+                                (on "drag" (fn [d]
+                                             (let [event (.. js/d3 -event)]
+                                               (set! (.-fx d) (.-x event))
+                                               (set! (.-fy d) (.-y event)))))
+                                (on "end" (fn [d]
+                                              (set! (.-fx d) nil)
+                                              (set! (.-fy d) nil)))))]
               (.. point-enter
                   (append "svg:circle")
                   (attr "r" 5)
-                  (attr "fill" #(.-color %)))
+                  (attr "fill" #(.-color %))
+                  (call (drag-fn simul)))
               (.. point-enter
                   (append "text")
                   (attr "x" 10)
