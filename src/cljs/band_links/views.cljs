@@ -1,128 +1,140 @@
 (ns band-links.views
   (:require [band-links.events :as events]
             [band-links.subs :as subs]
-            [re-frame.core :as re-frame]
-            [reagent.core :as reagent]
-            [cljsjs.d3 :as d3]
-            [clojure.string :as s]))
+            [oz.core :as oz]
+            [re-frame.core :as re-frame]))
+
+(def vega-force
+  {:$schema "https://vega.github.io/schema/vega/v5.json"
+   :autosize "none"
+   :width 700
+   :height 500
+   :padding 0
+
+   :signals
+   [{:name "cx" :update "width / 2"}
+    {:name "cy" :update "height / 2"}
+    {:name "nodeRadius"
+     :value 8}
+    {:name "nodeCharge"
+     :value -30}
+    {:name "linkDistance"
+     :value 30}
+    {:name "static" :value false :bind {:input "checkbox"}}
+    {:description "State variable for active node fix status."
+     :name "fix"
+     :value false
+     :on
+     [{:events "symbol:mouseout[!event.buttons], window:mouseup"
+       :update "false"}
+      {:events "symbol:mouseover" :update "fix || true"}
+      {:events
+       "[symbol:mousedown, window:mouseup] > window:mousemove!"
+       :update "xy()"
+       :force true}]}
+    {:description "Graph node most recently interacted with."
+     :name "node"
+     :value nil
+     :on
+     [{:events "symbol:mouseover"
+       :update "fix === true ? item() : node"}]}
+    {:description
+     "Flag to restart Force simulation upon data changes."
+     :name "restart"
+     :value false
+     :on [{:events {:signal "fix"} :update "fix && fix.length"}]}]
+
+   :data []
+
+   :scales
+   [{:name "color"
+     :type "ordinal"
+     :domain {:data "node-data" :field "group"}
+     :range {:scheme "category20c"}}]
+
+   :marks
+   [{:name "nodes"
+     :type "symbol"
+     :zindex 1
+     :from {:data "node-data"}
+     :on
+     [{:trigger "fix"
+       :modify "node"
+       :values
+       "fix === true ? {fx: node.x, fy: node.y} : {fx: fix[0], fy: fix[1]}"}
+      {:trigger "!fix"
+       :modify "node"
+       :values "{fx: null, fy: null}"}]
+     :encode
+     {:enter
+      {:fill {:scale "color" :field "group"}
+       :stroke {:value "white"}}
+      :update
+      {:size {:signal "2 * nodeRadius * nodeRadius"}
+       :cursor {:value "pointer"}}}
+     :transform
+     [{:type "force"
+       :iterations 300
+       :restart {:signal "restart"}
+       :static {:signal "static"}
+       :signal "force"
+       :forces
+       [{:force "center" :x {:signal "cx"} :y {:signal "cy"}}
+        {:force "collide" :radius {:signal "nodeRadius"}}
+        {:force "nbody" :strength {:signal "nodeCharge"}}
+        {:force "link"
+         :links "link-data"
+         :distance {:signal "linkDistance"}}]}]}
+    {:name "nodes-text"
+     :type "text"
+     :from {:data "nodes"}
+     :encode
+     {:update
+      {:x {:field "x" :offset 10}
+       :y {:field "y" :offset -10}
+       :text {:field "datum.name"}
+       :fill {:value "#C5C8C6"}}
+      :hover
+      {:fill {:value "#707880"}}}}
+    {:type "path"
+     :from {:data "link-data"}
+     :interactive false
+     :encode
+     {:update {:stroke {:value "#ccc"} :strokeWidth {:value 0.5}}}
+     :transform
+     [{:type "linkpath"
+       :require {:signal "force"}
+       :shape "line"
+       :sourceX "datum.source.x"
+       :sourceY "datum.source.y"
+       :targetX "datum.target.x"
+       :targetY "datum.target.y"}]}]})
+
 
 (defn ->node
-  [id text color]
+  [id name group]
   {:index id
-   :text text :color color})
+   :name name :group group})
 
 (defn ->link
   [artist-node band-node]
   {:source (:index artist-node)
-   :target (:index band-node)})
+   :target (:index band-node)
+   :value 1})
 
 (defn network-data->viz-data
   [network-data]
-  (let [artist-node (->node 0 (:artist/name network-data) "#FF0000")
+  (let [artist-node (->node 0 (:artist/name network-data) 0)
         [band-nodes links] (->> (:artist/bands network-data)
                                 (map-indexed vector)
                                 (map (fn [[id band]]
-                                       (let [band-node (->node (inc id) (:band/name band) "#00FF00")]
+                                       (let [band-node (->node (inc id) (:band/name band) 1)]
                                          [band-node (->link artist-node band-node)])))
                                 (apply map vector))]
-    {:nodes (cons artist-node band-nodes)
-     :links links}))
-
-(defn network-viz-inner-comp
-  [viz-data]
-  (letfn [(draw-simul [simul]
-            (.. js/d3
-                (selectAll "g")
-                remove)
-            (.. js/d3
-                (selectAll "line")
-                remove)
-            (.. js/d3
-                (select "svg")
-                (selectAll "line")
-                (data (.links (.force simul "link")))
-                enter
-                (append "line")
-                (attr "stroke" "#FF00FF")
-                (attr "x1" #(-> % .-source .-x))
-                (attr "y1" #(-> % .-source .-y))
-                (attr "x2" #(-> % .-target .-x))
-                (attr "y2" #(-> % .-target .-y)))
-            (let [point-enter (.. js/d3
-                                  (select "svg")
-                                  (selectAll "circle")
-                                  (data (.nodes simul))
-                                  enter
-                                  (append "g")
-                                  (attr "transform" #(str "translate(" (.-x %) " " (.-y %) ")")))
-                  drag-fn (fn [s]
-                            (.. js/d3
-                                drag
-                                (on "start" (fn [d]
-                                              (.. s
-                                                  (alphaTarget 0.3)
-                                                  restart)
-                                              (set! (.-fx d) (.-x d))
-                                              (set! (.-fy d) (.-y d))))
-                                (on "drag" (fn [d]
-                                             (let [event (.. js/d3 -event)]
-                                               (set! (.-fx d) (.-x event))
-                                               (set! (.-fy d) (.-y event)))))
-                                (on "end" (fn [d]
-                                              (set! (.-fx d) nil)
-                                              (set! (.-fy d) nil)))))]
-              (.. point-enter
-                  (append "svg:circle")
-                  (attr "r" 5)
-                  (attr "fill" #(.-color %))
-                  (call (drag-fn simul)))
-              (.. point-enter
-                  (append "text")
-                  (attr "x" 10)
-                  (attr "y" -10)
-                  (text #(.-text %)))))
-          (refresh-viz [simul]
-            (.. js/d3
-                (selectAll "line")
-                (data (.. simul (force "link") links))
-                (attr "x1" #(-> % .-source .-x))
-                (attr "y1" #(-> % .-source .-y))
-                (attr "x2" #(-> % .-target .-x))
-                (attr "y2" #(-> % .-target .-y)))
-            (.. js/d3
-                (selectAll "g")
-                (data (.nodes simul))
-                (attr "transform" #(str "translate(" (.-x %) " " (.-y %) ")"))))
-          (gen-simul [{:keys [nodes links]}]
-            (.. js/d3
-                (forceSimulation (clj->js nodes))
-                (force "link" (.. js/d3
-                                  (forceLink (clj->js links))
-                                  (id #(.-index %))))
-                (force "charge" (.forceManyBody js/d3))
-                (force "center" (.forceCenter js/d3 200 200))))
-          (init-simul [viz-data]
-            (let [simul (gen-simul viz-data)]
-              (.on simul "tick" #(refresh-viz simul))
-              (draw-simul simul)))]
-
-    (reagent/create-class
-     {:reagent-render
-      (fn []
-        [:svg {:height 400 :width 400}])
-
-      :component-did-mount
-      (fn [this]
-        (init-simul viz-data))
-
-      :component-did-update
-      (fn [this]
-        (let [[_ viz-data] (reagent/argv this)]
-          (init-simul viz-data)))})))
-
-(defn network-viz-outer-comp
-  [network-data]
-  [network-viz-inner-comp (network-data->viz-data network-data)])
+    [{:name "node-data"
+      :values (cons artist-node band-nodes)}
+     {:name "link-data"
+      :values links}]))
 
 (defn artist-network-comp
   []
@@ -137,7 +149,10 @@
       {:on-click #(re-frame/dispatch [::events/button-clicked])}
       "Click me"]
      (when (not (empty? @data))
-       [network-viz-outer-comp @data])]))
+       [oz/vega (assoc vega-force
+                       :data
+                       (network-data->viz-data @data))])]))
+
 
 (defn main-panel []
   (let [name (re-frame/subscribe [::subs/name])]

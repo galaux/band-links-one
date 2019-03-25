@@ -15,7 +15,11 @@
                                com.google.guava/guava]]
                  [cljs-ajax "0.8.0"]
                  [day8.re-frame/http-fx "0.1.6"]
-                 [cljsjs/d3 "5.9.1-0"]
+                 [cljsjs/vega "5.3.1-0"]
+                 [cljsjs/vega-embed "4.0.0-rc1-0"]
+                 [cljsjs/vega-lite "3.0.0-rc16-0"]
+                 [cljsjs/vega-tooltip "0.16.0-0"]
+                 [metasoarous/oz "1.5.6"]
 
                  [compojure "1.5.0"]
                  [yogthos/config "0.8"]
