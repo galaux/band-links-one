@@ -52,6 +52,8 @@
 
   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
 
+  :aliases {"import" ["run" "-m" "band-links.import/run"]}
+
   :profiles
   {:dev
    {:source-paths ["env/dev"]
